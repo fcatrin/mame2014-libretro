@@ -38,6 +38,9 @@ typedef struct joystate_t
    int button[MAX_BUTTONS];
    int a1[2];
    int a2[2];
+   int tab;
+   int f11;
+   int f2;
 }Joystate;
 
 /* rendering target */
@@ -873,6 +876,17 @@ void process_joypad_state(void)
       joystate[j].a2[0] = 2 * (input_state_cb(j, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X));
       joystate[j].a2[1] = 2 * (input_state_cb(j, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y));
    }
+
+   joystate[0].tab = (
+		   joystate[0].button[RETRO_DEVICE_ID_JOYPAD_L2] &&
+		   joystate[0].button[RETRO_DEVICE_ID_JOYPAD_R2] )
+		   ? 0x80 : 0;
+
+   joystate[0].f2 = (
+		   joystate[0].button[RETRO_DEVICE_ID_JOYPAD_L3] &&
+		   joystate[0].button[RETRO_DEVICE_ID_JOYPAD_R3] )
+		   ? 0x80 : 0;
+
 }
 
 void process_mouse_state(void)
@@ -1003,9 +1017,9 @@ static void initInput(running_machine &machine)
       sprintf(defname, "Pad%d", i);
       Pad_device[i] = machine.input().device_class(DEVICE_CLASS_KEYBOARD).add_device(defname);
 
-      input_device_item_add_pad (i,Buttons_Name[RETROPAD_L2], &joystate[i].button[RETROPAD_L2],(input_item_id)(ITEM_ID_TAB+0),retrokbd_get_state );
-      input_device_item_add_pad (i,Buttons_Name[RETROPAD_R2], &joystate[i].button[RETROPAD_R2],(input_item_id)(ITEM_ID_F11+0),retrokbd_get_state );
-      input_device_item_add_pad (i,Buttons_Name[RETROPAD_L3], &joystate[i].button[RETROPAD_L3],(input_item_id)(ITEM_ID_F2+0),retrokbd_get_state );
+      input_device_item_add_pad (i,Buttons_Name[RETROPAD_L2], &joystate[i].tab,(input_item_id)(ITEM_ID_TAB+0),retrokbd_get_state );
+      // input_device_item_add_pad (i,Buttons_Name[RETROPAD_R2], &joystate[i].button[RETROPAD_R2],(input_item_id)(ITEM_ID_F11+0),retrokbd_get_state );
+      input_device_item_add_pad (i,Buttons_Name[RETROPAD_L3], &joystate[i].f2,(input_item_id)(ITEM_ID_F2+0),retrokbd_get_state );
 
       input_device_item_add_pad (i,Buttons_Name[RETROPAD_PAD_UP]   , &joystate[i].button[RETROPAD_PAD_UP]   ,PAD_DIR[i][0],retrokbd_get_state );
       input_device_item_add_pad (i,Buttons_Name[RETROPAD_PAD_DOWN] , &joystate[i].button[RETROPAD_PAD_DOWN] ,PAD_DIR[i][1],retrokbd_get_state );
