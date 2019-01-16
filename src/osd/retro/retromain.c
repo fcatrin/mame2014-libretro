@@ -67,7 +67,7 @@ bool nobuffer_enable = false;
 
 bool hide_gameinfo = false;
 bool mouse_enable = false;
-bool cheats_enable = false;
+bool cheats_enable = true;
 bool alternate_renderer = false;
 bool boot_to_osd_enable = false;
 bool boot_to_bios_enable = false;
@@ -1730,20 +1730,26 @@ static void Set_Path_Option(void)
    {
       Add_Option((char*)(opt_name[i]));
 
-      if(opt_type[i] == 0)
-      {
-         if (retro_save_directory)
-            sprintf(tmp_dir, "%s%c%s%c%s", retro_save_directory, slash, core, slash,dir_name[i]);
-         else
-            sprintf(tmp_dir, "%s%c%s%c%s%c", ".", slash, core, slash,dir_name[i],slash);
+      if (!strcmp(dir_name[i], "samples")) {
+    	  sprintf(tmp_dir, "%s%c%s", retro_system_directory, slash, dir_name[i]);
+      } else {
+
+		  if(opt_type[i] == 0)
+		  {
+			 if (retro_save_directory)
+				sprintf(tmp_dir, "%s%c%s%c%s", retro_save_directory, slash, core, slash,dir_name[i]);
+			 else
+				sprintf(tmp_dir, "%s%c%s%c%s%c", ".", slash, core, slash,dir_name[i],slash);
+		  }
+		  else
+		  {
+			 if(retro_system_directory)
+				sprintf(tmp_dir, "%s%c%s%c%s", retro_system_directory, slash, core, slash,dir_name[i]);
+			 else
+				sprintf(tmp_dir, "%s%c%s%c%s%c", ".", slash, core, slash,dir_name[i],slash);
+		  }
       }
-      else
-      {
-         if(retro_system_directory)
-            sprintf(tmp_dir, "%s%c%s%c%s", retro_system_directory, slash, core, slash,dir_name[i]);
-         else
-            sprintf(tmp_dir, "%s%c%s%c%s%c", ".", slash, core, slash,dir_name[i],slash);
-      }
+      log_cb(RETRO_LOG_ERROR, "path %s -> %s\n", dir_name[i], tmp_dir);
 
       Add_Option((char*)(tmp_dir));
    }
