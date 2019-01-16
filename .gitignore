@@ -5,6 +5,7 @@
 !/.gitignore
 !/makefile
 !/*.md
+!/.project
 /cfg
 /diff
 /ini
