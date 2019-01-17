@@ -105,8 +105,10 @@ BUILD_EXPAT = 1
 
 # uncomment next line to build zlib as part of MAME build
 ifneq ($(platform), android)
-   ifneq ($(platform), emscripten)
-      BUILD_ZLIB = 1
+   ifneq ($(platform), android-x86)
+      ifneq ($(platform), emscripten)
+         BUILD_ZLIB = 1
+      endif
    endif
 endif
 # uncomment next line to build libflac as part of MAME build
@@ -258,6 +260,42 @@ else ifeq ($(platform), android)
    CCOMFLAGS += $(PLATCFLAGS)
 
    LIBS += -lc -ldl -lm -landroid -llog -lsupc++ $(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/thumb/libgnustl_static.a -lgcc
+
+else ifeq ($(platform), android-x86)
+   TARGETLIB := $(TARGET_NAME)_libretro_x86_android.so
+   TARGETOS=linux
+   fpic := -fPIC
+   SHARED := -shared -Wl,--version-script=src/osd/retro/link.T
+   CC = @$(ANDROID_NDK_X86)/bin/i686-linux-android-g++
+   AR = @$(ANDROID_NDK_X86)/bin/i686-linux-android-ar
+   LD = @$(ANDROID_NDK_X86)/bin/i686-linux-android-g++
+
+   FORCE_DRC_C_BACKEND = 1
+
+   CCOMFLAGS += -fPIC -fpic -ffunction-sections -funwind-tables
+
+   PLATCFLAGS += -DANDROID -DALIGN_INTS -DALIGN_SHORTS -DSDLMAME_NO64BITIO -DRETRO_SETJMP_HACK -DSDLMAME_ARM
+
+   PLATCFLAGS += -I$(ANDROID_NDK_ROOT)/platforms/android-19/arch-x86/usr/include -I$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/include
+
+   PLATCFLAGS += -I$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/x86/include
+
+   ifeq ($(VRENDER),opengl)
+      PLATCFLAGS += -DHAVE_OPENGL
+      LIBS += -lGLESv2
+      GLES = 1
+   endif
+
+   LDFLAGS += $(fpic) $(SHARED) 
+   LDFLAGS += -L$(ANDROID_NDK_ROOT)/platforms/android-19/x86/usr/lib  --sysroot=$(ANDROID_NDK_ROOT)/platforms/android-19/arch-x86 -shared
+
+
+   REALCC   = $(ANDROID_NDK_X86)/bin/i686-linux-android-gcc
+   NATIVECC = g++
+   NATIVECFLAGS = -std=gnu99
+   CCOMFLAGS += $(PLATCFLAGS)
+
+   LIBS += -lc -ldl -lm -landroid -llog $(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/x86/libgnustl_static.a -lgcc
 
 # QNX
 else ifeq ($(platform), qnx)
@@ -764,9 +802,12 @@ endif
 
 ifneq (,$(findstring clang,$(CC)))
 ifneq ($(platform), android)
+ifneq ($(platform), android-x86)
 LIBS += -lstdc++ -lpthread
 endif
 endif
+endif
+
 #-------------------------------------------------
 # 'default' target needs to go here, before the
 # include files which define additional targets
@@ -863,6 +904,8 @@ $(sort $(OBJDIRS)):
 BUILDTOOLS_CUSTOM = 0
 
 ifeq ($(platform), android)
+BUILDTOOLS_CUSTOM = 1
+else ifeq ($(platform), android-x86)
 BUILDTOOLS_CUSTOM = 1
 else ifeq ($(platform), ios)
 BUILDTOOLS_CUSTOM = 1

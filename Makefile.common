@@ -69,8 +69,10 @@ endif
 endif
 
 ifneq ($(platform),android)
+ifneq ($(platform),android-x86)
 LIBS += -lpthread
 BASELIBS += -lpthread
+endif
 endif
 
 #-------------------------------------------------
