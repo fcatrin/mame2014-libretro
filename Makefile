@@ -236,6 +236,7 @@ else ifeq ($(platform), android-arm)
    CC = @arm-linux-androideabi-g++
    AR = @arm-linux-androideabi-ar
    LD = @arm-linux-androideabi-g++
+   STRIP = @arm-linux-androideabi-strip
 
    FORCE_DRC_C_BACKEND = 1
 
@@ -274,6 +275,7 @@ else ifeq ($(platform), android-x86)
    CC = @i686-linux-android-g++
    AR = @i686-linux-android-ar
    LD = @i686-linux-android-g++
+   STRIP = @i686-linux-android-strip
 
    FORCE_DRC_C_BACKEND = 1
 
@@ -957,6 +959,7 @@ $(EMULATOR): $(EMUINFOOBJ) $(DRIVLISTOBJ) $(DRVLIBS) $(LIBOSD) $(LIBBUS) $(LIBOP
 	@echo Linking $(TARGETLIB)
 	@mkdir -p $(TARGETDIR)
 	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) $(VERSIONOBJ) $^ $(LIBS) -o $(TARGETLIB)
+	$(STRIP) --strip-unneeded $(TARGETLIB)
 
 
 #-------------------------------------------------
