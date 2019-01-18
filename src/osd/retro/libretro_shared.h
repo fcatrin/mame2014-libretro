@@ -40,6 +40,7 @@ extern bool write_config_enable;
 extern bool read_config_enable;
 extern bool hide_nagscreen;
 extern bool hide_warnings;
+extern bool retrox_simple;
 extern bool throttle_enable;
 extern bool auto_save_enable;
 extern bool game_specific_saves_enable;

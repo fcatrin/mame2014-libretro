@@ -52,12 +52,17 @@ void ui_menu_main::populate()
 {
 	astring menu_text;
 
+	bool retrox_basic = machine().options().retrox_simple();
+
 	/* add input menu items */
 	item_append("Input (general)", NULL, 0, (void *)INPUT_GROUPS);
 
 	menu_text.printf("Input (this %s)",emulator_info::get_capstartgamenoun());
 	item_append(menu_text.cstr(), NULL, 0, (void *)INPUT_SPECIFIC);
-	item_append("Autofire Settings", NULL, 0, (void *)AUTOFIRE_MENU);
+
+	if (!retrox_basic) {
+		item_append("Autofire Settings", NULL, 0, (void *)AUTOFIRE_MENU);
+	}
 
 	/* add optional input-related menus */
 	if (machine().ioport().has_analog())
@@ -70,8 +75,10 @@ void ui_menu_main::populate()
 		item_append(menu_text.cstr(), NULL, 0, (void *)SETTINGS_DRIVER_CONFIG);
 	}
 
-	/* add bookkeeping menu */
-	item_append("Bookkeeping Info", NULL, 0, (void *)BOOKKEEPING);
+	if (!retrox_basic) {
+		/* add bookkeeping menu */
+		item_append("Bookkeeping Info", NULL, 0, (void *)BOOKKEEPING);
+	}
 
 	/* add game info menu */
 	menu_text.printf("%s Information",emulator_info::get_capstartgamenoun());
@@ -92,8 +99,10 @@ void ui_menu_main::populate()
 			item_append("Tape Control", NULL, 0, (void *)TAPE_CONTROL);
 	}
 
-	if (machine().ioport().has_bioses())
-		item_append("Bios Selection", NULL, 0, (void *)BIOS_SELECTION);
+	if (!retrox_basic) {
+		if (machine().ioport().has_bioses())
+			item_append("Bios Selection", NULL, 0, (void *)BIOS_SELECTION);
+	}
 
 	slot_interface_iterator slotiter(machine().root_device());
 	if (slotiter.first() != NULL)
@@ -134,9 +143,11 @@ void ui_menu_main::populate()
 	if (machine().options().cheat() && machine().cheat().first() != NULL)
 		item_append("Cheat", NULL, 0, (void *)CHEAT);
 
-	/* add reset and exit menus */
-	menu_text.printf("Select New %s",emulator_info::get_capstartgamenoun());
-	item_append(menu_text.cstr(), NULL, 0, (void *)SELECT_GAME);
+	if (!retrox_basic) {
+		/* add reset and exit menus */
+		menu_text.printf("Select New %s",emulator_info::get_capstartgamenoun());
+		item_append(menu_text.cstr(), NULL, 0, (void *)SELECT_GAME);
+	}
 }
 
 ui_menu_main::~ui_menu_main()

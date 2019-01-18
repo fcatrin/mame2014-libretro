@@ -66,6 +66,7 @@ int mame_reset = -1;
 /* core options */
 bool hide_nagscreen = false;
 bool hide_warnings = false;
+bool retrox_simple = true;
 bool nobuffer_enable = false;
 
 bool hide_gameinfo = false;
@@ -1711,6 +1712,9 @@ static void Set_Default_Option(void)
 
    if(hide_warnings)
       Add_Option("-skip_warnings");
+
+   if(retrox_simple)
+      Add_Option("-retrox_simple");
 
    if(write_config_enable)
       Add_Option("-writeconfig");

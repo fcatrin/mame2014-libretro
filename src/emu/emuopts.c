@@ -175,6 +175,7 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_SKIP_GAMEINFO,                              "0",         OPTION_BOOLEAN,    "skip displaying the game information screen at startup" },
 	{ OPTION_SKIP_NAGSCREEN,                             "0",         OPTION_BOOLEAN,    "skip displaying the legal warning at startup" },
 	{ OPTION_SKIP_WARNINGS,                              "0",         OPTION_BOOLEAN,    "skip displaying the compatibility status at startup" },
+	{ OPTION_RETROX_SIMPLE,                              "1",         OPTION_BOOLEAN,    "hide advanced options" },
 	{ OPTION_UI_FONT,                                    "default",   OPTION_STRING,     "specify a font to use" },
 	{ OPTION_RAMSIZE ";ram",                             NULL,        OPTION_STRING,     "size of RAM (if supported by driver)" },
 	{ OPTION_CONFIRM_QUIT,                               "0",         OPTION_BOOLEAN,    "display confirm quit screen on exit" },

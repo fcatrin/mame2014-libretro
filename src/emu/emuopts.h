@@ -175,6 +175,7 @@ enum
 #define OPTION_SKIP_GAMEINFO        "skip_gameinfo"
 #define OPTION_SKIP_NAGSCREEN       "skip_nagscreen"
 #define OPTION_SKIP_WARNINGS        "skip_warnings"
+#define OPTION_RETROX_SIMPLE        "retrox_simple"
 #define OPTION_UI_FONT              "uifont"
 #define OPTION_RAMSIZE              "ramsize"
 
@@ -354,6 +355,7 @@ public:
 	bool skip_gameinfo() const { return bool_value(OPTION_SKIP_GAMEINFO); }
 	bool skip_nagscreen() const { return bool_value(OPTION_SKIP_NAGSCREEN); }
 	bool skip_warnings() const { return bool_value(OPTION_SKIP_WARNINGS); }
+	bool retrox_simple() const { return bool_value(OPTION_RETROX_SIMPLE); }
 	const char *ui_font() const { return value(OPTION_UI_FONT); }
 	const char *ram_size() const { return value(OPTION_RAMSIZE); }
 

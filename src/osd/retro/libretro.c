@@ -33,6 +33,7 @@ static char option_nag[50];
 static char option_info[50];
 static char option_renderer[50];
 static char option_warnings[50];
+static char option_retrox_simple[50];
 static char option_osd[50];
 static char option_cli[50];
 static char option_bios[50];
@@ -127,6 +128,7 @@ void retro_set_environment(retro_environment_t cb)
    sprintf(option_nag, "%s_%s",core,"hide_nagscreen");
    sprintf(option_info, "%s_%s",core,"hide_infoscreen");
    sprintf(option_warnings,"%s_%s",core,"hide_warnings");
+   sprintf(option_retrox_simple,"%s_%s",core,"retrox_simple");
    sprintf(option_renderer,"%s_%s",core,"alternate_renderer");
    sprintf(option_osd,"%s_%s",core,"boot_to_osd");
    sprintf(option_bios,"%s_%s",core,"boot_to_bios");
@@ -163,6 +165,7 @@ void retro_set_environment(retro_environment_t cb)
     { option_nag, "Hide nag screen; disabled|enabled" },
     { option_info, "Hide gameinfo screen; disabled|enabled" },
     { option_warnings, "Hide warnings screen; disabled|enabled" },
+    { option_retrox_simple, "Hide advanced options; enabled|disabled" },
     { option_renderer, "Alternate render method; disabled|enabled" },
 
     /* ONLY FOR MESS/UME */
@@ -280,6 +283,18 @@ static void check_variables(void)
       if (!strcmp(var.value, "enabled"))
          hide_warnings = true;
    }
+
+   var.key   = option_retrox_simple;
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "disabled"))
+         retrox_simple = false;
+      if (!strcmp(var.value, "enabled"))
+    	 retrox_simple = true;
+   }
+
 
    var.key   = option_renderer;
    var.value = NULL;
