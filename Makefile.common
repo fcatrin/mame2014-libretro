@@ -68,7 +68,7 @@ OSDOBJS += $(GLOBJ)/glsym_gl.o
 endif
 endif
 
-ifneq ($(platform),android)
+ifneq ($(platform),android-arm)
 ifneq ($(platform),android-x86)
 LIBS += -lpthread
 BASELIBS += -lpthread
