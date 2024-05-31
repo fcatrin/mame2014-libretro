@@ -1290,7 +1290,7 @@ UINT32 ui_manager::handler_messagebox_anykey(running_machine &machine, render_co
 	machine.ui().draw_text_box(container, messagebox_text, JUSTIFY_LEFT, 0.5f, 0.5f, messagebox_backcolor);
 
 	// if the user cancels, exit out completely
-	if (ui_input_pressed(machine, IPT_UI_CANCEL))
+	if (ui_input_pressed(machine, IPT_UI_EXIT_GAME))
 	{
 		machine.schedule_exit();
 		state = UI_HANDLER_CANCEL;
@@ -1529,7 +1529,7 @@ UINT32 ui_manager::handler_ingame(running_machine &machine, render_container *co
 
 	if (ui_disabled) return ui_disabled;
 
-	if (ui_input_pressed(machine, IPT_UI_CANCEL))
+	if (ui_input_pressed(machine, IPT_UI_EXIT_GAME))
 	{
 		machine.ui().request_quit();
 		return 0;
@@ -1590,6 +1590,20 @@ UINT32 ui_manager::handler_ingame(running_machine &machine, render_container *co
 		machine.pause();
 		return machine.ui().set_handler(handler_load_save, LOADSAVE_LOAD);
 	}
+
+	// handle quick save request
+	if (ui_input_pressed(machine, IPT_UI_QUICK_SAVE))
+	{
+		machine.pause();
+		return machine.ui().set_handler(handler_quick_save,0);
+	}
+	// handle quick load request
+	if (ui_input_pressed(machine, IPT_UI_QUICK_LOAD))
+	{
+		machine.pause();
+		return machine.ui().set_handler(handler_quick_load,0);
+	}
+
 
 	// handle a toggle cheats request
 	if (ui_input_pressed(machine, IPT_UI_TOGGLE_CHEAT))
@@ -1690,6 +1704,45 @@ UINT32 ui_manager::handler_load_save(running_machine &machine, render_container 
 		popmessage("Load from position %c", file);
 		machine.schedule_load(filename);
 	}
+
+	// remove the pause and reset the state
+	machine.resume();
+	return UI_HANDLER_CANCEL;
+}
+
+
+//-------------------------------------------------
+//  handler_save_quick - quickload slots 1-3
+//-------------------------------------------------
+UINT32 ui_manager::handler_quick_save(running_machine &machine, render_container *container, UINT32 state)
+{
+	char filename[20];
+	input_code code;
+	char file = ITEM_ID_1 - ITEM_ID_0 + '0';
+
+	// display a popup indicating that the save will proceed
+	sprintf(filename, "%c", file);
+	popmessage("Save to position %c", file);
+	machine.schedule_save(filename);
+
+	// remove the pause and reset the state
+	machine.resume();
+	return UI_HANDLER_CANCEL;
+}
+
+//-------------------------------------------------
+//  handler_load_quick - quickload slots 1-3
+//-------------------------------------------------
+UINT32 ui_manager::handler_quick_load(running_machine &machine, render_container *container, UINT32 state)
+{
+	char filename[20];
+	input_code code;
+	char file = ITEM_ID_1 - ITEM_ID_0 + '0';
+
+	// display a popup indicating that the save will proceed
+	sprintf(filename, "%c", file);
+	popmessage("Load to position %c", file);
+	machine.schedule_load(filename);
 
 	// remove the pause and reset the state
 	machine.resume();

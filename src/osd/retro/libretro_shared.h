@@ -29,7 +29,7 @@ extern int retro_pause;
 
 extern bool experimental_cmdline;
 extern bool hide_gameinfo;
-extern bool mouse_enable;
+extern int mouse_mode;
 extern bool cheats_enable;
 extern bool alternate_renderer;
 extern bool boot_to_osd_enable;
@@ -45,9 +45,12 @@ extern bool throttle_enable;
 extern bool auto_save_enable;
 extern bool game_specific_saves_enable;
 
-extern int mouseLX;
-extern int mouseLY;
+extern int mouseLX[4];
+extern int mouseLY[4];
 extern int mouseBUT[4];
+extern int lightgunLX[4];
+extern int lightgunLY[4];
+extern int lightgunBUT[4];
 
 extern UINT16 retrokbd_state[RETROK_LAST];
 
@@ -64,14 +67,16 @@ extern float retro_aspect;
 extern float retro_fps;
 
 #if defined(WANT_MAME)
-static const char core[] = "mame2014";
+static const char core[] = "mame2015";
 #elif defined(WANT_MESS)
-static const char core[] = "mess2014";
+static const char core[] = "mess2015";
 #elif defined(WANT_UME)
-static const char core[] = "ume2014";
+static const char core[] = "ume2015";
+#elif defined(WANT_PHILIPS_CDI)
+static const char core[] = "cdi2015";
 #else
 /* fallback */
-static const char core[] = "mame2014";
+static const char core[] = "mame2015";
 #endif
 
 /* libretro callbacks */
@@ -87,6 +92,8 @@ void process_keyboard_state(void);
 void process_joypad_state(void);
 
 void process_mouse_state(void);
+
+void process_lightgun_state(void);
 
 #ifdef __cplusplus
 extern "C" {

@@ -14,6 +14,17 @@
 #include "libretro.h"
 #include "libretro_shared.h"
 
+/* Empirically, i found that Mame savegames sizes are uniform for a given game,
+that is, they're always the same size as the game progress. Tested on a dozen 
+of different games both news and olds.
+Problem is: looking at the code i can't exclude that at some point a game
+can return a bigger state than the previous (i tried to follow the code but
+it goes too deep into the innards of Mame).
+To account for this, i report a bigger size than the one i got from mame,
+this multiplier tells how much extra space to reserve (currently 
+one and a half). */
+#define SAVE_SIZE_MULTIPLIER 1.5
+
 /* forward decls / externs / prototypes */
 bool retro_load_ok    = false;
 int retro_pause       = 0;
@@ -26,6 +37,8 @@ float retro_fps       = 60.0;
 int SHIFTON           = -1;
 int NEWGAME_FROM_OSD  = 0;
 char RPATH[512];
+
+int serialize_size = 0; // memorize size of serialized savestate
 
 static char option_mouse[50];
 static char option_cheats[50];
@@ -123,7 +136,7 @@ void retro_set_audio_sample(retro_audio_sample_t cb) { }
 
 void retro_set_environment(retro_environment_t cb)
 {
-   sprintf(option_mouse, "%s_%s", core, "mouse_enable");
+   sprintf(option_mouse, "%s_%s", core, "mouse_mode");
    sprintf(option_cheats, "%s_%s", core, "cheats_enable");
    sprintf(option_nag, "%s_%s",core,"hide_nagscreen");
    sprintf(option_info, "%s_%s",core,"hide_infoscreen");
@@ -150,15 +163,16 @@ void retro_set_environment(retro_environment_t cb)
 
     { option_read_config, "Read configuration; disabled|enabled" },
 
+#if !defined(WANT_PHILIPS_CDI)
     /* ONLY FOR MESS/UME */
 #if !defined(WANT_MAME)
     { option_write_config, "Write configuration; disabled|enabled" },
     { option_saves, "Save state naming; game|system" },
 #endif
-
+#endif
     /* common for MAME/MESS/UME */
     { option_auto_save, "Auto save/load states; disabled|enabled" },
-    { option_mouse, "Enable in-game mouse; disabled|enabled" },
+    { option_mouse, "XY device (Restart); none|lightgun|mouse" },
     { option_throttle, "Enable throttle; disabled|enabled" },
     { option_cheats, "Enable cheats; disabled|enabled" },
 //  { option_nobuffer, "Nobuffer patch; disabled|enabled" },
@@ -168,6 +182,7 @@ void retro_set_environment(retro_environment_t cb)
     { option_retrox_simple, "Hide advanced options; enabled|disabled" },
     { option_renderer, "Alternate render method; disabled|enabled" },
 
+#if !defined(WANT_PHILIPS_CDI)
     /* ONLY FOR MESS/UME */
 #if !defined(WANT_MAME)
     { option_softlist, "Enable softlists; enabled|disabled" },
@@ -183,6 +198,7 @@ void retro_set_environment(retro_environment_t cb)
     /* common for MAME/MESS/UME */
     { option_osd, "Boot to OSD; disabled|enabled" },
     { option_cli, "Boot from CLI; disabled|enabled" },
+#endif
     { NULL, NULL },
 
    };
@@ -212,10 +228,12 @@ static void check_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (!strcmp(var.value, "disabled"))
-         mouse_enable = false;
-      if (!strcmp(var.value, "enabled"))
-         mouse_enable = true;
+      if (!strcmp(var.value, "none"))
+         mouse_mode = 0;
+      if (!strcmp(var.value, "mouse"))
+         mouse_mode = 1;
+      if (!strcmp(var.value, "lightgun"))
+         mouse_mode = 2;
    }
 
    var.key   = option_throttle;
@@ -418,20 +436,26 @@ void retro_get_system_info(struct retro_system_info *info)
    memset(info, 0, sizeof(*info));
 
 #if defined(WANT_MAME)
-   info->library_name     = "MAME 2014";
+   info->library_name     = "MAME 2015";
 #elif defined(WANT_MESS)
-   info->library_name     = "MESS 2014";
+   info->library_name     = "MESS 2015";
 #elif defined(WANT_UME)
-   info->library_name     = "UME 2014";
+   info->library_name     = "UME 2015";
+#elif defined(WANT_PHILIPS_CDI)
+   info->library_name     = "Philips CD-i 2015";
 #else
-   info->library_name     = "MAME 2014";
+   info->library_name     = "MAME 2015";
 #endif
 
 #ifndef GIT_VERSION
 #define GIT_VERSION ""
 #endif
-   info->library_version  = "0.159" GIT_VERSION;
+   info->library_version  = "0.160" GIT_VERSION;
+#if !defined(WANT_PHILIPS_CDI)
    info->valid_extensions = "chd|cmd|zip|7z";
+#else
+   info->valid_extensions = "chd";
+#endif
    info->need_fullpath    = true;
    info->block_extract    = true;
 }
@@ -532,6 +556,10 @@ void retro_reset (void)
 int RLOOP=1;
 extern void retro_main_loop();
 
+// save state functions defined in mame.c
+extern void retro_save_state(retro_buffer_writer &buf);
+extern bool retro_load_state(retro_buffer_reader &buf);
+
 void retro_run (void)
 {
    static int mfirst=1;
@@ -552,6 +580,7 @@ void retro_run (void)
 
    if (NEWGAME_FROM_OSD == 1)
    {
+      serialize_size = 0; // reset stored serial size
       struct retro_system_av_info ninfo;
 
       retro_get_system_av_info(&ninfo);
@@ -568,6 +597,7 @@ void retro_run (void)
    input_poll_cb();
 
    process_mouse_state();
+   process_lightgun_state();
    process_keyboard_state();
    process_joypad_state();
 
@@ -635,14 +665,54 @@ bool retro_load_game(const struct retro_game_info *info)
 
 void retro_unload_game(void)
 {
+   serialize_size = 0; // reset stored serialized savestate size
    if (retro_pause == 0)
       retro_pause = -1;
 }
 
-/* Stubs */
-size_t retro_serialize_size(void) { return 0; }
-bool retro_serialize(void *data, size_t size) { return false; }
-bool retro_unserialize(const void * data, size_t size) { return false; }
+size_t retro_serialize_size(void) 
+{ 
+	log_cb(RETRO_LOG_INFO, "RETRO_SERIALIZE_SIZE CALLED\n");
+	// serialize_size is memorized per-game, if we already have it
+	// we send the old value
+	if(serialize_size == 0)
+	{
+		// to calculate the size we must perform an actual savestate
+		// and measure it
+		retro_buffer_writer saveBuffer;
+		retro_save_state(saveBuffer);
+		// reserve some extra space (see comment on define)
+		serialize_size  = saveBuffer.size() * SAVE_SIZE_MULTIPLIER;
+		log_cb(RETRO_LOG_INFO, "RETRO_SERIALIZE_SIZE IS: %d, ALLOCATED: %d\n", saveBuffer.size(), serialize_size);
+	}
+
+	return serialize_size; 
+}
+bool retro_serialize(void *data, size_t size) 
+{
+	retro_buffer_writer saveBuffer;
+	retro_save_state(saveBuffer);
+	log_cb(RETRO_LOG_INFO, "RETRO_SERIALIZE ACTUAL SIZE IS: %d\n",saveBuffer.size());
+	// check if the save size is within both the buffer size and the precalculated serialize_size.
+	if( (saveBuffer.size() > size) || (size>serialize_size) ) 
+	{
+		log_cb(RETRO_LOG_ERROR, "RETRO_SERIALIZE too big. Got %d buffer size: %d stored size: %d\n",saveBuffer.size(), size, serialize_size);
+		return false;
+	}
+	memcpy(data, saveBuffer.data(), saveBuffer.size()); 
+	return true;
+}
+bool retro_unserialize(const void * data, size_t size) 
+{ 
+	log_cb(RETRO_LOG_INFO, "RETRO_UNSERIALIZE. SIZE: %d\n",size);
+	retro_buffer_reader readBuffer(data, size);
+	bool ret = retro_load_state(readBuffer);
+	if(!ret) {
+		log_cb(RETRO_LOG_ERROR, "RETRO_UNSERIALIZE. ERROR!\n");
+	}
+	return ret;
+
+}
 
 unsigned retro_get_region (void) { return RETRO_REGION_NTSC; }
 void *retro_get_memory_data(unsigned type) { return 0; }
